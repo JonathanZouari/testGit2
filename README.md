@@ -1,28 +1,44 @@
-# Tic-Tac-Toe
-
-![Tic-Tac-Toe — two players, one terminal](assets/tictactoe-banner.jpg)
+# Titanic survival
 
 <p>
   <img alt="Python 3" src="https://img.shields.io/badge/Python-3-0B1220?style=flat-square">
-  <img alt="Two players" src="https://img.shields.io/badge/players-2-FF5A5F?style=flat-square">
-  <img alt="X" src="https://img.shields.io/badge/X-coral-FF5A5F?style=flat-square">
-  <img alt="O" src="https://img.shields.io/badge/O-teal-2EC4B6?style=flat-square">
-  <img alt="Terminal" src="https://img.shields.io/badge/board-terminal-F4F1EA?style=flat-square&labelColor=0B1220">
+  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?style=flat-square">
+  <img alt="Plotly" src="https://img.shields.io/badge/Plotly-charts-3D4F7C?style=flat-square">
 </p>
 
-Two-player tic-tac-toe in the terminal. No dependencies beyond Python 3.
+דשבורד אינטראקטיבי לנתוני הנוסעים של הטיטאניק. כל שורה ב-`data/titanic.csv` היא נוסע, עם מין, גיל, מחלקה, נמל עלייה, מחיר כרטיס ותוצאת ההישרדות. הקובץ הוא מאגר [Kaggle Titanic](https://www.kaggle.com/c/titanic) הציבורי של Data Science Dojo, 891 רשומות.
 
-## Run
+## התקנה
 
 ```bash
-python tictactoe.py
+python -m pip install streamlit pandas plotly
 ```
 
-## How to play
+## הרצה
 
-![Board numbered 1 through 9](assets/tictactoe-board.jpg)
+מתוך תיקיית הפרויקט:
 
-- X goes first. Each player picks a free square by its number.
-- Three in a row — across, down, or diagonal — wins.
-- After 9 moves with no winner, the game is a draw.
-- At the end, `y` plays again and `n` quits.
+```bash
+python -m streamlit run titanic.py
+```
+
+הדשבורד נפתח בדפדפן, בדרך כלל בכתובת `http://localhost:8501`.
+
+## מה יש במסך
+
+- **סרגל סינון:** מין, מחלקה (1st / 2nd / 3rd), נמל עלייה (Cherbourg, Queenstown, Southampton), טווח גיל וטווח מחיר. אפשר לכלול גם נוסעים בלי גיל ידוע.
+- **מדדים:** מספר נוסעים, שיעור הישרדות, גיל ממוצע וחציון מחיר הכרטיס. כולם מתעדכנים לפי הסינון.
+- **גרפים:** הישרדות לפי מין, שיעור הישרדות לפי מחלקה, התפלגות גילאים, מחיר לפי מחלקה, ונוסעים לפי נמל. אפשר להתקרב, להזיז ולהוריד כל גרף כתמונה.
+- **טבלה:** שם, מין, גיל, מחלקה, נמל, מחיר, גודל משפחה ותוצאה. אפשר לחפש, לבחור עמודות ולהוריד CSV.
+
+על כל 891 הרשומות שיעור ההישרדות הוא 38.4%. בקרב הנשים הוא 74.2%.
+
+## מבנה התיקייה
+
+```text
+testGit22/
+├── titanic.py          # אפליקציית Streamlit
+├── data/
+│   └── titanic.csv     # 891 נוסעים
+└── README.md
+```
