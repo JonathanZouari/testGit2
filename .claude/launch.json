@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "titanic-dashboard",
+      "runtimeExecutable": "C:/Users/User/AppData/Local/Programs/Python/Python311/python.exe",
+      "runtimeArgs": ["-m", "streamlit", "run", "titanic_dashboard.py", "--server.port", "8510", "--server.headless", "true"],
+      "port": 8510
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+<!-- 3D Titanic scene, embedded by titanic_dashboard.py. Needs internet for three.js (CDN). -->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #071422; }
+  #note {
+    position: absolute; bottom: 12px; left: 16px;
+    font: 600 15px Georgia, serif; color: #f4efe4;
+    text-shadow: 0 1px 4px #000; opacity: 0; transition: opacity 0.6s;
+  }
+</style>
+<div id="note">14 April 1912, 23:40 — Titanic strikes the iceberg</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  const SAIL = 10, SINK = 11, LOOP = 26; // seconds: sailing, sinking, whole loop
+  const START_X = -90, HIT_X = -25;      // ship centre; bow is 20 ahead of it
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x071422);
+  scene.fog = new THREE.Fog(0x071422, 60, 170);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  document.body.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0x8fa8d8, 0.55));
+  const moon = new THREE.DirectionalLight(0xdfe8ff, 0.9);
+  moon.position.set(-30, 50, 40);
+  scene.add(moon);
+
+  const mat = (color, extra) => new THREE.MeshStandardMaterial({ color, flatShading: true, ...extra });
+  const box = (w, h, d, m, x, y, z) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    mesh.position.set(x, y, z || 0);
+    return mesh;
+  };
+
+  // Ship: bow points +x, 40 long, 5 wide.
+  const ship = new THREE.Group();
+  const deck = new THREE.Shape();
+  deck.moveTo(20, 0);
+  deck.quadraticCurveTo(12, 2.5, 4, 2.5);
+  deck.lineTo(-16, 2.5);
+  deck.quadraticCurveTo(-20, 2.5, -20, 0);
+  deck.quadraticCurveTo(-20, -2.5, -16, -2.5);
+  deck.lineTo(4, -2.5);
+  deck.quadraticCurveTo(12, -2.5, 20, 0);
+  const hullGeo = new THREE.ExtrudeGeometry(deck, { depth: 4, bevelEnabled: false });
+  hullGeo.rotateX(-Math.PI / 2);
+  ship.add(new THREE.Mesh(hullGeo, mat(0x15171c)));
+  ship.add(box(26, 1.6, 4, mat(0xf2f0e8), -2, 4.8));
+  ship.add(box(26.2, 0.35, 4.1, mat(0xffd98a, { emissive: 0xffc04d }), -2, 4.9)); // lit windows
+  ship.add(box(20, 1.2, 3.2, mat(0xf2f0e8), -2, 6.2));
+  for (let i = 0; i < 4; i++) {
+    const x = 5.5 - i * 5;
+    const funnel = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 4.5, 12), mat(0xd9a441));
+    funnel.position.set(x, 9, 0);
+    funnel.rotation.z = 0.12;
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.87, 1, 12), mat(0x111111));
+    cap.position.y = 2.6;
+    funnel.add(cap);
+    ship.add(funnel);
+  }
+  for (const x of [14, -15]) {
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 9, 6), mat(0x6b4a2b));
+    mast.position.set(x, 8.5, 0);
+    ship.add(mast);
+  }
+  scene.add(ship);
+
+  const ice = mat(0xdff3ff, { roughness: 0.35 });
+  for (const [r, h, x, z] of [[6, 13, 1, -4], [4, 8, -3, -7], [3.5, 6, 5, -8], [3, 4, -1, -1]]) {
+    const peak = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), ice);
+    peak.position.set(x, h / 2 - 0.5, z);
+    peak.rotation.y = x;
+    scene.add(peak);
+  }
+
+  const seaGeo = new THREE.PlaneGeometry(400, 400, 60, 60);
+  seaGeo.rotateX(-Math.PI / 2);
+  scene.add(new THREE.Mesh(seaGeo, mat(0x0b2a4a, { roughness: 0.6 })));
+  const seaPos = seaGeo.attributes.position;
+
+  const stars = new Float32Array(900);
+  for (let i = 0; i < 900; i += 3) {
+    const a = Math.random() * Math.PI * 2, e = Math.random() * 1.2 + 0.15;
+    stars.set([Math.cos(a) * Math.cos(e) * 300, Math.sin(e) * 300, Math.sin(a) * Math.cos(e) * 300], i);
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute("position", new THREE.BufferAttribute(stars, 3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.2, fog: false })));
+
+  const note = document.getElementById("note");
+  const ease = (k) => k * k * (3 - 2 * k);
+
+  // Everything is a pure function of time, so the loop restarts cleanly.
+  function frame(t) {
+    const sink = Math.min(Math.max((t - SAIL) / SINK, 0), 1);
+    const sailed = Math.min(t / SAIL, 1);
+    ship.position.set(
+      START_X + (HIT_X - START_X) * sailed,
+      -1 + Math.sin(t * 1.3) * 0.15 * (1 - sink) - 24 * ease(sink),
+      1.5
+    );
+    ship.rotation.z = -0.5 * ease(Math.min(sink * 1.6, 1)); // bow goes down first
+    ship.rotation.x = 0.12 * ease(sink);
+    note.style.opacity = t > SAIL && t < LOOP - 2 ? 1 : 0;
+
+    for (let i = 0; i < seaPos.count; i++) {
+      seaPos.setY(i, Math.sin(seaPos.getX(i) * 0.15 + t) * 0.35 + Math.cos(seaPos.getZ(i) * 0.2 + t * 0.8) * 0.3);
+    }
+    seaPos.needsUpdate = true;
+    seaGeo.computeVertexNormals();
+
+    const angle = 0.9 + t * 0.14;
+    const shake = Math.max(0, 1 - Math.abs(t - SAIL) * 1.5) * 0.8;
+    camera.position.set(
+      -12 + Math.cos(angle) * 62 + (Math.random() - 0.5) * shake,
+      17 + (Math.random() - 0.5) * shake,
+      Math.sin(angle) * 62
+    );
+    camera.lookAt(-12, 3, 0);
+    renderer.render(scene, camera);
+  }
+
+  function resize() {
+    renderer.setSize(innerWidth, innerHeight);
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    frame(SAIL - 0.5); // still image just before impact
+    addEventListener("resize", () => frame(SAIL - 0.5));
+  } else {
+    renderer.setAnimationLoop((ms) => frame((ms / 1000) % LOOP));
+  }
+</script>
