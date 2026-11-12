@@ -1,5 +1,5 @@
 """Two-player tic-tac-toe played in the terminal."""
-
+print("pie")
 WIN_LINES = (
     (0, 1, 2),
     (3, 4, 5),
